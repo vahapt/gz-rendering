@@ -29,6 +29,7 @@
 #include "gz/rendering/Utils.hh"
 
 #include <string.h>
+#include <vector>
 
 namespace gz
 {
@@ -118,7 +119,7 @@ using namespace rendering;
 /// \param[in] _texture Texture the box covers
 /// \param[in] _format Pixel format of the memory the box describes
 /// \return The box, containing metadata only
-static Ogre::TextureBox TextureBoxFor(Ogre::TextureGpu *_texture,
+static Ogre::TextureBox textureBoxFor(Ogre::TextureGpu *_texture,
     Ogre::PixelFormatGpu _format)
 {
   return Ogre::TextureBox(
@@ -148,11 +149,11 @@ static Ogre::TextureBox TextureBoxFor(Ogre::TextureGpu *_texture,
 /// _dstFormat. Left untouched, with an error printed, if it is too small.
 /// \param[in,out] _conversionBuffer Buffer for the raw readback when the
 /// formats differ; grown as needed and reused across calls
-static void ReadBack(Ogre::TextureGpu *_texture,
+static void readBack(Ogre::TextureGpu *_texture,
     Ogre::PixelFormatGpu _dstFormat, Image &_dstImage,
     std::vector<uint8_t> &_conversionBuffer)
 {
-  Ogre::TextureBox dstBox = TextureBoxFor(_texture, _dstFormat);
+  Ogre::TextureBox dstBox = textureBoxFor(_texture, _dstFormat);
   if (_dstImage.MemorySize() < dstBox.getSizeBytes())
   {
     gzerr << "Image too small for texture readback: "
@@ -173,7 +174,7 @@ static void ReadBack(Ogre::TextureGpu *_texture,
   {
     // Formats differ: read back unconverted into regular memory, then
     // convert there.
-    Ogre::TextureBox rawBox = TextureBoxFor(_texture, texFormat);
+    Ogre::TextureBox rawBox = textureBoxFor(_texture, texFormat);
     _conversionBuffer.resize(rawBox.getSizeBytes());
     rawBox.data = _conversionBuffer.data();
 
@@ -488,13 +489,13 @@ void Ogre2RenderTarget::Copy(Image &_image) const
   {
     // create tmp color image to get data from gpu
     Image colorImage(this->width, this->height, PF_R8G8B8);
-    ReadBack(texture, dstOgrePf, colorImage, this->dataPtr->conversionBuffer);
+    readBack(texture, dstOgrePf, colorImage, this->dataPtr->conversionBuffer);
     // convert color image to bayer image
     _image = gz::rendering::convertRGBToBayer(colorImage, _image.Format());
   }
   else
   {
-    ReadBack(texture, dstOgrePf, _image, this->dataPtr->conversionBuffer);
+    readBack(texture, dstOgrePf, _image, this->dataPtr->conversionBuffer);
   }
 }
 
